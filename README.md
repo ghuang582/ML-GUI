@@ -24,7 +24,7 @@ Select potential statistics and graphs you would like to see before deciding on 
 *3. Modelling*
 
 Select the method that best suits your data and then the type of model you would like to apply.
--**Currently only allows k-Nearest Neighbours, regression option to be added**
+- *Currently only allows k-Nearest Neighbours, regression option to be added*
 
 *4. Model Evaluation*
 
