@@ -7,7 +7,8 @@ h = 600
 set_seed = 0
 
 # Default data frame settings
-df = pd.read_csv(r'C:\Users\Gordon\PycharmProjects\GUI Project\Data\iris.csv', header=None)
+header = None
+df = pd.read_csv(r'C:\Users\Gordon\PycharmProjects\GUI Project\Data\iris.csv', header=header)
 data_cols = 4
 target_col = 4
 df_data = df.iloc[:, :data_cols]
@@ -17,7 +18,7 @@ summ_status = 0
 freq_status = 0
 scatter_status = 0
 
-selected = "Nearest Neighbours"
+selected = ""
 # Classification
 ## Nearest Neighbours
 kn_test_size = 0.25

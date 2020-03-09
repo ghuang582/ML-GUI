@@ -2,8 +2,13 @@ import tkinter as tk
 import pandas as pd
 import math
 import matplotlib.pyplot as plt
-import numpy as np
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.metrics import confusion_matrix
+
 import config
 
 # Main window and associated side menu
@@ -14,7 +19,7 @@ class main_window(tk.Tk):
 
         # Main Menu
         main_menu = tk.Frame(parent, width=200, height=config.h)
-        mm_title = tk.Label(main_menu, text="Main Menu")
+        mm_title = tk.Label(main_menu, text="Main Menu", font=('bold'))
         mm_title.grid(row=0)
         main_menu.grid(row=0, sticky='n')
         import_tab = tk.Button(main_menu, text="1. Import Data", command=self.open_import)
@@ -27,35 +32,43 @@ class main_window(tk.Tk):
         eval_tab.grid(row=4)
 
         # Main View Window
-        self.view = tk.Frame(self, width=config.w - 200, height=config.h, bg="green")
-        self.view.grid(row=0, column=1, padx=20, pady=20)
+        self.view = tk.Frame(self, width=config.w - 200, height=config.h)
+        self.view.grid(row=0, column=1)
+
+        # Menu Tabs
+        # 1. Import Data Tab
+        self.import_data = c_import_data(self.view)
+        self.import_data.grid_propagate(0)
+        self.import_data.grid(row=0, sticky="nsew", padx=10, pady=10)
+        # 2. Exploratory Analysis Tab
+        self.explore = c_exploratory(self.view)
+        self.explore.grid_propagate(0)
+        self.explore.grid(row=0, sticky="nsew", padx=10, pady=10)
+        # 3. Modelling Tab
+        self.modelling = c_modelling(self.view)
+        self.modelling.grid_propagate(0)
+        self.modelling.grid(row=0, sticky="nsew", padx=10, pady=10)
+        # 4. Model Evaluation Tab
+        self.import_data.tkraise()
 
     def open_import(self):
-        import_data = c_import_data(self.view)
-        import_data.grid_propagate(0)
-        import_data.grid(row=0, sticky="nsew")
-        # import_data.tkraise()
+        self.import_data.tkraise()
 
     def open_explore(self):
-        explore = c_exploratory(self.view)
-        explore.grid_propagate(0)
-        explore.grid(row=0, sticky="nsew")
-        # explore.tkraise()
+        self.explore.tkraise()
 
     def open_modelling(self):
-        modelling = c_modelling(self.view)
-        modelling.grid_propagate(0)
-        modelling.grid(row=0, sticky="nsew")
-        # modelling.tkraise()
+        self.modelling.tkraise()
 
     def open_eval(self):
-        eval = c_eval(self.view)
-        eval.grid_propagate(0)
-        eval.grid(row=0, sticky="nsew")
+        self.eval = c_eval(self.view)
+        self.eval.grid_propagate(0)
+        self.eval.grid(row=0, sticky="nsew", padx=10, pady=10)
+        self.eval.tkraise()
 
 class c_import_data(tk.Frame):
     def __init__(self, parent):
-        tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h, bg="blue")
+        tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h)
 
         # File Path
         tk.Label(self, text="File Path").grid(row=0)
@@ -130,11 +143,11 @@ class c_exploratory(tk.Frame):
         config.summ_status = self.var_summ.get()
         config.freq_status = self.var_freq.get()
         config.scatter_status = self.var_scatter.get()
-        self.c_output(self.master.master.view).grid(row=0, column=0, sticky="nsew")
+        self.c_output(self.master.master.view).grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
 class c_output(tk.Frame):
     def __init__(self, parent):
-        tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h, bg="black")
+        tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h)
         nrows = math.ceil(len(config.df_data.columns) / 3)
 
         selections = []
@@ -190,6 +203,7 @@ class c_output(tk.Frame):
             scatter_canvas.get_tk_widget().grid(row=1)
 
         self.selection_bar = tk.StringVar(self)
+        self.selection_bar.set(selections[-1])
         tk.OptionMenu(self, self.selection_bar, *selections).grid(row=0, sticky="w")
         self.selection_bar.trace('w', self.OutputRaise)
 
@@ -200,9 +214,6 @@ class c_output(tk.Frame):
             self.freq_frame.tkraise()
         elif self.selection_bar.get() == "Scatterplots":
             self.scatter_frame.tkraise()
-
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
 
 class c_modelling(tk.Frame):
     def __init__(self, parent):
@@ -275,9 +286,6 @@ class c_modelling(tk.Frame):
             config.kn_test_size = float(self.test_size_var.get())
             config.user_n = int(self.user_n_var.get())
 
-from sklearn.model_selection import cross_val_score, KFold
-from sklearn.metrics import confusion_matrix
-
 class c_eval(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h)
@@ -292,17 +300,18 @@ class c_eval(tk.Frame):
 
             # Standard accuracy score
             test_score = kn.score(x_test, y_test)
-            tk.Label(self, text="Accuracy: {}".format(test_score)).grid(row=1)
+            tk.Label(self, text="Accuracy: {:.2f}".format(test_score)).grid(row=1, sticky="w")
 
             # K-fold cross validation
             cross_val_params = KFold(n_splits=3, shuffle=True, random_state=config.set_seed)
             cross_val = cross_val_score(kn, config.df_data, config.df_target, cv=cross_val_params)
-            tk.Label(self, text="Cross-validation Score: {}".format(cross_val)).grid(row=2)
+            tk.Label(self, text="Cross-validation Score: {} \n Average Cross-validation score: {:.2f}"
+                     .format(cross_val, cross_val.mean())).grid(row=2, sticky="w")
 
             # Confusion matrix
             targets = list(set(config.df_target))
             cm = confusion_matrix(y_test, pred, targets)
-            tk.Label(self, text="{}".format(cm)).grid(row=3)
+            tk.Label(self, text="Confusion Matrix: \n {}".format(cm)).grid(row=3, sticky="w")
 
             cm_fig = plt.figure()
             ax = cm_fig.add_subplot(111)
