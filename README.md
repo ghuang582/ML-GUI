@@ -19,7 +19,7 @@ Simply run main.py with config.py in the same folder. The Data folder is optiona
 
 Select potential statistics and graphs you would like to see before deciding on your model. Currently limited to 3 choices:
 - Summary Statistics: applies pandas' `.describe()` to ouput mean, median, quartiles etc.
-- Frequency Histograms and Scatterplots - Currently only limited to outputting graphsh by all features, rather than selectively
+- Frequency Histograms and Scatterplots - Currently only limited to outputting graphs by all features, rather than selectively
 
 *3. Modelling*
 
