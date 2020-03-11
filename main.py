@@ -221,7 +221,7 @@ class c_modelling(tk.Frame):
 
         # Method Selection
         self.method_var = tk.StringVar(self)
-        options = ['Classification', 'Regression', 'Clustering']
+        options = ['Classification', 'Regression']
         self.method_var.set(options[0])
 
         dropdown = tk.OptionMenu(self, self.method_var, *options)
