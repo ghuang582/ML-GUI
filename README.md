@@ -1,6 +1,6 @@
 A basic GUI to use for basic supervised machine learning investigations. Still in development and very limited in functionality.
 - Currently only takes .csv files where the target values are in the right most column
-- Only offers k-Nearest Neighbours modelling, with pre-configured evaluation metrics
+- Only offers k-Nearest Neighbours modelling and basic linear regression, with pre-configured evaluation metrics
 
 **Installation**
 
@@ -39,4 +39,5 @@ Select the method that best suits your data and then the type of model you would
 
 Outputs evaluation metrics for the selected model. Click this tab once you have saved your settings in *3. Modelling*
 - Currently only supports k-Nearest Neighbours
-  - Yields accuracy score, k-fold cross validation score and a confusion matrix
+  - Yields accuracy score, k-fold cross validation score and a confusion matrix for classification
+  - Yields accuracy score and k-fold cross validation score for regression
