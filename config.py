@@ -23,3 +23,10 @@ selected = ""
 ## Nearest Neighbours
 kn_test_size = 0.25
 user_n = 3
+
+# Regression
+## Linear Regression
+lreg_test_size = 0.25
+user_alpha = 1
+lreg_model = "Standard"
+user_iter = 10000
