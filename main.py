@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.metrics import confusion_matrix
 
@@ -171,7 +174,7 @@ class c_output(tk.Frame):
             for pos, colname in enumerate(config.df_data.columns):
                 # if  config.df[pos].column.dtype != "category":
                 f_ax.append(hist_fig.add_subplot(nrows, 3, pos + 1))
-                f_ax[pos].hist(config.df_data[pos])
+                f_ax[pos].hist(config.df_data.iloc[:, pos])
                 f_ax[pos].title.set_text(str(colname))
 
             hist_canvas = FigureCanvasTkAgg(hist_fig, self.freq_frame)
@@ -194,9 +197,8 @@ class c_output(tk.Frame):
             for pos, colname in enumerate(config.df_data.columns):
                 for pos2, colname2 in enumerate(config.df_data.columns[pos+1:]):
                     s_ax.append(scatter_fig.add_subplot(scatter_nrows, 3, subplot_index))
-                    s_ax[subplot_index-1].scatter(config.df_data[pos], config.df_data[pos+pos2])
+                    s_ax[subplot_index-1].scatter(config.df_data.iloc[:, pos], config.df_data.iloc[:, pos+pos2])
                     s_ax[subplot_index-1].title.set_text("{} vs {}".format(str(colname), colname2))
-                    print(pos, pos2, subplot_index, colname, colname2)
                     subplot_index += 1
 
             scatter_canvas = FigureCanvasTkAgg(scatter_fig, self.scatter_frame)
@@ -219,34 +221,39 @@ class c_modelling(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent, width=config.w - 200, height=config.h)
 
+        # Main Window Frame
+        self.model_frame = tk.Frame(self)
+
         # Method Selection
         self.method_var = tk.StringVar(self)
-        options = ['Classification', 'Regression']
+        options = ['Classification', 'Regression', 'Clustering']
         self.method_var.set(options[0])
 
-        dropdown = tk.OptionMenu(self, self.method_var, *options)
-        dropdown_label = tk.Label(self, text="Method")
+        dropdown = tk.OptionMenu(self.model_frame, self.method_var, *options)
+        dropdown_label = tk.Label(self.model_frame, text="Method")
         dropdown_label.grid(row=0, column=0)
         dropdown.grid(row=0, column=1)
         self.method_var.trace('w', self.UpdateModelsMenu)
 
         # Model Selection
         self.model_var = tk.StringVar(self)
-        self.mdropdown = tk.OptionMenu(self, self.model_var, value="N/A")
-        self.mdropdown_label = tk.Label(self, text="Model")
+        self.mdropdown = tk.OptionMenu(self.model_frame, self.model_var, value="N/A")
+        self.mdropdown_label = tk.Label(self.model_frame, text="Model")
         self.mdropdown_label.grid(row=1, column=0)
         self.mdropdown.grid(row=1, column=1)
+
+        self.model_frame.grid(row=0)
 
     def UpdateModelsMenu(self, *args):
         if self.method_var.get() == "Classification":
             options_class = ['Nearest Neighbours', 'Naive Bayes']
             self.model_var.set(options_class[0])
-            self.mdropdown = tk.OptionMenu(self, self.model_var, *options_class)
+            self.mdropdown = tk.OptionMenu(self.model_frame, self.model_var, *options_class)
             self.mdropdown.grid(row=1, column=1)
         elif self.method_var.get() == "Regression":
-            options_reg = ['Linear regression', 'Support Vector Machines']
+            options_reg = ['Linear Regression', 'Support Vector Machines']
             self.model_var.set(options_reg[0])
-            self.mdropdown = tk.OptionMenu(self, self.model_var, *options_reg)
+            self.mdropdown = tk.OptionMenu(self.model_frame, self.model_var, *options_reg)
             self.mdropdown.grid(row=1, column=1)
 
         self.model_var.trace('w', self.UpdateSettingsMenu)
@@ -273,18 +280,58 @@ class c_modelling(tk.Frame):
             output_button = tk.Button(kn_frame, text="Save Settings", command=self.set_model_settings)
             output_button.grid(row=2, column=10)
 
-            kn_frame.grid(row=2, column=1, columnspan=10)
+            kn_frame.grid(row=1, column=0, columnspan=10, sticky="nsew")
 
         #### Naive Bayes
 
         ## Regression
         #### Linear regression
+        if self.model_var.get() == "Linear Regression":
+            self.lreg_frame = tk.Frame(self)
+
+            self.test_size_var = tk.StringVar(self)
+            tk.Label(self.lreg_frame, text="Test Size").grid(row=0, column=0)
+            tk.Entry(self.lreg_frame, textvariable=self.test_size_var).grid(row=0, column=1)
+
+            linear_model = ["Standard", "Ridge", "Lasso"]
+            self.linear_model_var = tk.StringVar(self)
+            tk.Label(self.lreg_frame, text="Linear Model").grid(row=1)
+            self.lreg_dropdown = tk.OptionMenu(self.lreg_frame, self.linear_model_var, *linear_model).grid(row=1, column=1)
+            self.linear_model_var.set(linear_model[0])
+
+            output_button = tk.Button(self.lreg_frame, text="Save Settings", command=self.set_model_settings)
+            output_button.grid(row=4, column=10)
+
+            self.linear_model_var.trace('w', self.update_lreg)
+
+            self.lreg_frame.grid(row=1, column=0, columnspan=10, sticky="nsew")
+
+    def update_lreg(self, *args):
+        self.alpha_var = tk.StringVar(self)
+        self.max_iter_var = tk.StringVar(self)
+        if self.linear_model_var.get() == "Ridge":
+            tk.Label(self.lreg_frame, text="Alpha").grid(row=2)
+            tk.Entry(self.lreg_frame, textvariable=self.alpha_var).grid(row=2, column=1)
+        if self.linear_model_var.get() == "Lasso":
+            tk.Label(self.lreg_frame, text="Alpha").grid(row=2)
+            tk.Entry(self.lreg_frame, textvariable=self.alpha_var).grid(row=2, column=1)
+            tk.Label(self.lreg_frame, text="Max Iterations").grid(row=3, column=0)
+            tk.Entry(self.lreg_frame, textvariable=self.max_iter_var).grid(row=3, column=1)
 
     def set_model_settings(self):
         if self.model_var.get() == "Nearest Neighbours":
             config.selected = "Nearest Neighbours"
             config.kn_test_size = float(self.test_size_var.get())
             config.user_n = int(self.user_n_var.get())
+
+        if self.model_var.get() == "Linear Regression":
+            config.selected = "Linear Regression"
+            config.lreg_test_size = float(self.test_size_var.get())
+            config.lreg_model = self.linear_model_var.get()
+            if config.lreg_model in ["Ridge", "Lasso"]:
+                config.user_alpha = float(self.alpha_var.get())
+                if config.lreg_model == "Lasso":
+                    config.user_iter = int(self.max_iter_var.get())
 
 class c_eval(tk.Frame):
     def __init__(self, parent):
@@ -324,7 +371,32 @@ class c_eval(tk.Frame):
             cm_canvas = FigureCanvasTkAgg(cm_fig, self)
             cm_canvas.get_tk_widget().grid(row=4)
 
+        if config.selected == "Linear Regression":
+            x_train, x_test, y_train, y_test = \
+                train_test_split(config.df_data, config.df_target, test_size=config.lreg_test_size, random_state=config.set_seed)
+
+            if config.lreg_model == "Standard":
+                lr = LinearRegression().fit(x_train, y_train)
+                pred = lr.predict(x_test)
+
+            if config.lreg_model == "Ridge":
+                lr = Ridge(alpha=config.user_alpha).fit(x_train, y_train)
+                pred = lr.predict(x_test)
+
+            if config.lreg_model == "Lasso":
+                lr = Lasso(alpha=config.user_alpha, max_iter=config.user_iter).fit(x_train, y_train)
+                pred = lr.predict(x_test)
+
+            # Standard accuracy score
+            test_score = lr.score(x_test, y_test)
+            tk.Label(self, text="Accuracy: {:.2f}".format(test_score)).grid(row=1, sticky="w")
+
+            # K-fold cross validation
+            cross_val_params = KFold(n_splits=3, shuffle=True, random_state=config.set_seed)
+            cross_val = cross_val_score(lr, config.df_data, config.df_target, cv=cross_val_params)
+            tk.Label(self, text="Cross-validation Score: {} \n Average Cross-validation score: {:.2f}"
+                     .format(cross_val, cross_val.mean())).grid(row=2, sticky="w")
+
 if __name__=="__main__":
     app = main_window(None)
-    # app.geometry('800x600')
     app.mainloop()
